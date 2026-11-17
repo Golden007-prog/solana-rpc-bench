@@ -8,10 +8,10 @@ import { bench, timedCall, redactUrl, scrub, wsCheck, toWsUrl, formatTable, form
 // Real responses from https://api.mainnet-beta.solana.com, one per method, captured 2026-11-17: { status, body }.
 const fx = (method) => JSON.parse(readFileSync(new URL(`./fixtures/${method}.json`, import.meta.url), "utf8"));
 
-const HELIUS = "https://mainnet.helius-rpc.com/?api-key=0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0";
+const HELIUS = "https://mainnet.helius-rpc.com/?api-key=FAKE0000-not-a-real-key-0000-000000000000";
 const ALCHEMY = "https://solana-mainnet.g.alchemy.com/v2/AbCdEfGhIjKlMnOpQrStUvWx12";
 const QUICKNODE = "https://example-name.solana-mainnet.quiknode.pro/0123456789abcdef0123456789abcdef/";
-const SECRETS = ["0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0", "AbCdEfGhIjKlMnOpQrStUvWx12", "0123456789abcdef0123456789abcdef"];
+const SECRETS = ["FAKE0000-not-a-real-key-0000-000000000000", "AbCdEfGhIjKlMnOpQrStUvWx12", "0123456789abcdef0123456789abcdef"];
 
 function response(status, body, headers = {}) {
   const text = typeof body === "string" ? body : JSON.stringify(body);
