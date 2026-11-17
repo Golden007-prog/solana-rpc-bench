@@ -9,7 +9,15 @@ export class BenchInputError extends Error {
  * @returns {Promise<{ method: string, ok: boolean, kind: "ok"|"rpc-error"|"http-error"|"timeout"|"network"|"bad-json",
  *   ms: number, status: number|null, code: number|null, message: string|null, result?: any, retryAfterMs: number|null }>}
  */
-export async function timedCall(url, method, params, { fetch: fetchFn = globalThis.fetch, timeoutMs = 10_000, now = () => performance.now() } = {}) {
+export async function timedCall(url, method, params, opts = {}) {
+  // Not AbortSignal.timeout(): its timer is unref'd, so with nothing else keeping Node alive (a custom fetch,
+  // a stalled request) the process exits before the timeout fires and the call never settles.
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(new DOMException("The operation was aborted due to timeout", "TimeoutError")), opts.timeoutMs ?? 10_000);
+  try { return await timedCallOnce(url, method, params, opts, ac.signal); } finally { clearTimeout(timer); }
+}
+
+async function timedCallOnce(url, method, params, { fetch: fetchFn = globalThis.fetch, timeoutMs = 10_000, now = () => performance.now() } = {}, signal) {
   const t0 = now();
   const rec = { method, ok: false, kind: "ok", ms: 0, status: null, code: null, message: null, retryAfterMs: null };
   let res;
@@ -18,7 +26,7 @@ export async function timedCall(url, method, params, { fetch: fetchFn = globalTh
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-      signal: AbortSignal.timeout(timeoutMs),
+      signal,
     });
   } catch (e) {
     rec.ms = Math.round(now() - t0);
