@@ -153,7 +153,7 @@ Issues and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Qu
 
 ## Good first issues
 
-New to the project? These are small, scoped and come with step-by-step instructions: **[good first issues](https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)**. Bigger pieces (a Docker image, a scheduled report, an HTML report flag) are under **[help wanted](https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)**, and the [roadmap issue](https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue+is%3Aopen+Roadmap+in%3Atitle) groups everything open. Questions go in [Discussions](https://github.com/blixvip/solana-rpc-bench/discussions) or the [Discord](https://discord.gg/grokbot).
+New to the project? These are small, scoped and come with step-by-step instructions: **[good first issues](https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)**. Bigger pieces (a Docker image, a scheduled report, an HTML report flag) are under **[help wanted](https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)**, and the [roadmap issue](https://github.com/blixvip/solana-rpc-bench/issues/15) groups everything open. Questions go in [Discussions](https://github.com/blixvip/solana-rpc-bench/discussions) or the [Discord](https://discord.gg/grokbot).
 
 ## Related projects
 
