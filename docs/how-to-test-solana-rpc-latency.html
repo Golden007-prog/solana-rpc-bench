@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to test Solana RPC latency (and compare providers fairly) | Blix open source</title>
+<meta name="description" content="Measure a Solana RPC endpoint's latency with curl or a 20-line Node script, check slot lag between providers, and avoid the mistakes that make RPC benchmarks lie.">
+<link rel="canonical" href="https://blixvip.github.io/solana-rpc-bench/how-to-test-solana-rpc-latency.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to test Solana RPC latency (and compare providers fairly)">
+<meta property="og:description" content="Measure a Solana RPC endpoint's latency with curl or a 20-line Node script, check slot lag between providers, and avoid the mistakes that make RPC benchmarks lie.">
+<meta property="og:url" content="https://blixvip.github.io/solana-rpc-bench/how-to-test-solana-rpc-latency.html">
+<meta property="og:image" content="https://raw.githubusercontent.com/blixvip/solana-rpc-bench/main/assets/blix-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="https://raw.githubusercontent.com/blixvip/sol-holders/main/assets/blix-icon.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"How to test Solana RPC latency (and compare providers fairly)","description":"Measure a Solana RPC endpoint's latency with curl or a 20-line Node script, check slot lag between providers, and avoid the mistakes that make RPC benchmarks lie.","url":"https://blixvip.github.io/solana-rpc-bench/how-to-test-solana-rpc-latency.html","datePublished":"2026-11-17","dateModified":"2026-11-17","author":{"@type":"Organization","name":"Blix","url":"https://blixvip.com"},"publisher":{"@type":"Organization","name":"Blix","url":"https://blixvip.com"}}</script>
+<style>:root{color-scheme:dark;--bg:#0a0a0b;--panel:#141416;--line:#26262a;--ink:#f3f3f5;--muted:#a0a0a8;--accent:#8fb4ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+main{max-width:780px;margin:0 auto;padding:32px 16px 64px}
+nav{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:14px;margin-bottom:36px}nav .brand{font-weight:700;color:var(--ink);margin-right:auto}
+h1{font-size:clamp(28px,5.5vw,40px);line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}h2{font-size:22px;margin:40px 0 12px}h3{font-size:18px;margin:28px 0 8px}
+.lead{font-size:19px;color:var(--muted);margin:0 0 28px}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:0 0 16px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}p code,li code,td code{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.wrap{overflow-x:auto;margin:0 0 16px}table{border-collapse:collapse;width:100%;font-size:15px}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:var(--panel)}
+ul,ol{padding-left:22px}li{margin:6px 0}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:32px 0}.box h2{margin-top:0}
+.btn{display:inline-block;padding:10px 18px;border-radius:999px;border:1px solid var(--line);color:var(--ink);font-weight:600;margin:4px 8px 4px 0}.btn.main{background:var(--ink);color:#000;border-color:var(--ink)}.btn:hover{text-decoration:none;opacity:.9}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--ink)}.card:hover{text-decoration:none;border-color:#3a3a40}.card b{display:block;margin-bottom:4px}.card span{color:var(--muted);font-size:14px}
+footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}</style>
+</head>
+<body>
+<main>
+<nav><a class="brand" href="https://blixvip.github.io/">BLIX open source</a><a href="https://blixvip.github.io/solana-rpc-bench/">solana-rpc-bench</a><a href="https://github.com/blixvip/solana-rpc-bench">GitHub</a><a href="https://discord.gg/grokbot">Discord</a><a href="https://blixvip.com">blixvip.com</a></nav>
+<article>
+<h1>How to test Solana RPC latency (and compare providers fairly)</h1>
+<p class="lead">Status pages and "fastest RPC" lists measure somebody else's network. What your bot or backend feels is the round trip from <em>your</em> server to the endpoint, for the methods <em>you</em> call. Here is how to measure that in a few minutes, from a single curl to a fair side-by-side.</p>
+
+<h2>1. One request with curl</h2>
+<p>curl can split a request into its phases. Solana RPC is JSON-RPC over HTTP POST, so any method works:</p>
+<pre><code>curl -s -o /dev/null -w "dns %{time_namelookup}s  connect %{time_connect}s  tls %{time_appconnect}s  first byte %{time_starttransfer}s  total %{time_total}s\n" \
+  https://api.mainnet-beta.solana.com -X POST -H "content-type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"getSlot"}'</code></pre>
+<pre><code>dns 0.008573s  connect 0.075320s  tls 0.145765s  first byte 0.267736s  total 0.267804s</code></pre>
+<p>Read it as cumulative times. Here the TCP connect took about 67 ms and TLS another 70 ms, so roughly half of this 268 ms request was <strong>connection setup</strong>, which your app pays once per connection, not per request. That is the first trap: a single curl overstates latency for any client that keeps connections open (Node's <code>fetch</code>, <code>@solana/web3.js</code> and most HTTP clients do).</p>
+
+<h2>2. Many requests over one connection, with Node</h2>
+<p>Save this as <code>latency.mjs</code> and run <code>node latency.mjs</code> (Node 18+, no packages). It reuses one connection, waits 300 ms between calls to stay polite, and times each request to the full body, which is what your code actually waits for.</p>
+<pre><code>// latency.mjs: time one Solana RPC method, sequentially, and print p50 / p90.
+const url = process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
+const method = process.argv[2] || "getSlot";
+const times = [];
+
+for (let i = 0; i &lt; 10; i++) {
+  const t0 = performance.now();
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params: [] }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const body = await res.json(); // time to the full body, which is what your code waits for
+  const ms = performance.now() - t0;
+  if (body.error) throw new Error(`${method}: ${body.error.message}`);
+  times.push(ms);
+  console.log(`#${i + 1}  ${ms.toFixed(0)} ms`);
+  await new Promise((r) =&gt; setTimeout(r, 300)); // stay well under the rate limit
+}
+
+const sorted = [...times].sort((a, b) =&gt; a - b);
+const pct = (p) =&gt; sorted[Math.ceil((p / 100) * sorted.length) - 1].toFixed(0);
+console.log(`${method}: p50 ${pct(50)} ms, p90 ${pct(90)} ms, first call ${times[0].toFixed(0)} ms`);</code></pre>
+<p>A run from one machine against the public endpoint:</p>
+<pre><code>#1  246 ms
+#2  67 ms
+#3  93 ms
+#4  68 ms
+#5  66 ms
+#6  61 ms
+#7  84 ms
+#8  71 ms
+#9  59 ms
+#10  75 ms
+getSlot: p50 68 ms, p90 93 ms, first call 246 ms</code></pre>
+<p>The first call (246 ms) carries the connection setup; the steady state is under 100 ms. Report the median and a high percentile, never the average of a handful of calls, and never only the first call.</p>
+
+<h2>3. Time the methods you actually use</h2>
+<p><code>getSlot</code> is the cheapest call there is. A provider can be fast on it and slow on <code>getTransaction</code>, <code>getSignaturesForAddress</code> or a filtered <code>getProgramAccounts</code>, which touch far more data. Benchmark the mix your app sends. Some methods are not served at all on some plans: the public endpoint refuses <code>getTokenLargestAccounts</code> for every caller. A refusal is a result worth recording, not an error to retry (see <a href="solana-rpc-429-too-many-requests.html">why your Solana RPC returns 429</a>).</p>
+
+<h2>4. Check slot lag, not just speed</h2>
+<p>A fast endpoint that is two slots behind gives you stale balances and blockhashes quickly. Read <code>getSlot</code> from every endpoint back to back, at the same commitment, and compare with the highest:</p>
+<pre><code>// slotlag.mjs: how far behind each endpoint is, read back to back.
+const urls = (process.env.SOLANA_RPC_URLS || "https://api.mainnet-beta.solana.com").split(",");
+
+async function slot(url) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getSlot", params: [{ commitment: "confirmed" }] }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  return (await res.json()).result;
+}
+
+const slots = [];
+for (const url of urls) slots.push(await slot(url));
+const top = Math.max(...slots);
+urls.forEach((url, i) =&gt; console.log(`${new URL(url).host}  slot ${slots[i]}  lag ${top - slots[i]}`));</code></pre>
+<pre><code>SOLANA_RPC_URLS="https://api.mainnet-beta.solana.com,https://solana-rpc.publicnode.com" node slotlag.mjs
+api.mainnet-beta.solana.com  slot 470716772  lag 0
+solana-rpc.publicnode.com  slot 470716772  lag 0</code></pre>
+<p>A slot is about 400 ms and the reads are sequential, so a lag of 1 can be timing. A lag that stays above 2 or 3 over several rounds is real.</p>
+
+<h2>5. The mistakes that make RPC benchmarks lie</h2>
+<ul>
+<li><strong>Measuring from your laptop.</strong> Your app runs in a data centre. A provider 40 ms from your desk can be 5 ms from a server in the right region. Run the test where the app runs.</li>
+<li><strong>Firing requests in parallel.</strong> You end up measuring your rate limit and your own bandwidth, and you get 429s that say nothing about latency. Go one at a time with a delay.</li>
+<li><strong>Counting connection setup on every call.</strong> Use a client that keeps the connection open, and look at the first call separately.</li>
+<li><strong>Timing to the headers instead of the body.</strong> Large responses (<code>getTransaction</code>, <code>getProgramAccounts</code>) take time to download. Your code waits for all of it.</li>
+<li><strong>One run, one time.</strong> Run at different times of day and use enough rounds that p90 means something.</li>
+<li><strong>Pasting results with the API key in the URL.</strong> Helius puts the key in the query string, Alchemy and QuickNode in the path. Redact before you share.</li>
+</ul>
+
+<h2>Doing all of it in one command</h2>
+<p><a href="https://github.com/blixvip/solana-rpc-bench">solana-rpc-bench</a> does the above for any number of endpoints: six methods over N rounds with p50/p90/max, slot lag each round, which heavier methods each endpoint serves, an optional WebSocket check, and every key redacted. It is free, MIT licensed and has no dependencies.</p>
+<pre><code>npx github:blixvip/solana-rpc-bench https://api.mainnet-beta.solana.com --rounds 3 --delay 500
+SOLANA_RPC_URLS="https://mainnet.helius-rpc.com/?api-key=...,https://your-quicknode-url/..." npx github:blixvip/solana-rpc-bench --markdown</code></pre>
+<p>To keep watching over time, <a href="https://github.com/blixvip/solana-rpc-bench/blob/main/examples/github-action/bench.yml">examples/github-action/bench.yml</a> runs it daily in GitHub Actions and writes the Markdown report to the job summary.</p>
+</article>
+<div class="box"><h2>Want it done for you?</h2>
+<p>This tool comes from <a href="https://blixvip.com">Blix</a>, the AI-powered Solana memecoin terminal with 0% fees, which runs on several RPC keys at once: every pump.fun launch live, AI coin ratings, narratives, wallet and X tracking, and one-click trading. There is a <a href="https://blixvip.com/api">public API</a> and an <a href="https://blixvip.com/mcp">MCP server</a> too.</p>
+<p><a class="btn main" href="https://blixvip.com">Start trading at blixvip.com</a><a class="btn" href="https://discord.gg/grokbot">Join the Discord</a></p></div>
+<h2>Help build it</h2>
+<p>solana-rpc-bench is open source and takes pull requests. There are <a href="https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22">good first issues</a> with step-by-step instructions, and setup is <code>git clone</code> and <code>npm test</code>.</p>
+<h2>More guides</h2>
+<div class="grid"><a class="card" href="solana-rpc-429-too-many-requests.html"><b>Why your Solana RPC returns 429, and what to do</b><span>solana-rpc-bench</span></a><a class="card" href="https://blixvip.github.io/solana-rpc-pool/fix-solana-rpc-429-too-many-requests.html"><b>How to stop Solana RPC 429 errors (Too Many Requests)</b><span>solana-rpc-pool</span></a><a class="card" href="https://blixvip.github.io/solana-ws-keepalive/solana-websocket-stops-receiving-messages.html"><b>Why your Solana WebSocket stops receiving messages, and how to keep it alive</b><span>solana-ws-keepalive</span></a><a class="card" href="https://blixvip.github.io/sol-holders/solana-token-top-10-holders-percentage.html"><b>How to calculate a Solana token's top 10 holders percentage</b><span>sol-holders</span></a></div>
+<footer>Written by the <a href="https://blixvip.com">Blix</a> team. Code is MIT licensed. <a href="https://github.com/blixvip">github.com/blixvip</a> · <a href="https://discord.gg/grokbot">discord.gg/grokbot</a> · <a href="https://blixvip.github.io/">All tools and guides</a></footer>
+</main>
+</body>
+</html>

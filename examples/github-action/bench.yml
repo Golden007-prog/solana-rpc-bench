@@ -1,0 +1,41 @@
+# Benchmark your Solana RPC endpoints from GitHub's runners and put the Markdown report in the job summary.
+#
+# Copy this file to .github/workflows/solana-rpc-bench.yml in YOUR repository. It runs by hand (Actions tab ->
+# "Solana RPC bench" -> Run workflow) and once a day. Endpoints come from the SOLANA_RPC_URLS repository secret
+# (comma-separated, keys included: the report hides them); without the secret it benches the public mainnet RPC.
+#
+# Numbers are from a GitHub-hosted runner (usually a US Azure region), not from where your app runs.
+name: Solana RPC bench
+
+on:
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: "Rounds per endpoint"
+        required: false
+        default: "3"
+  schedule:
+    - cron: "17 6 * * *" # daily, 06:17 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # 22+ for the WebSocket check
+      - name: Run solana-rpc-bench
+        env:
+          SOLANA_RPC_URLS: ${{ secrets.SOLANA_RPC_URLS }}
+          ROUNDS: ${{ github.event.inputs.rounds || '3' }}
+        run: |
+          npx --yes github:blixvip/solana-rpc-bench --rounds "$ROUNDS" --delay 500 --ws --quiet --markdown > bench.md
+          cat bench.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: solana-rpc-bench
+          path: bench.md

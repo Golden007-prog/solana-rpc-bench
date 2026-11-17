@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why your Solana RPC returns 429 Too Many Requests, and what to do | Blix open source</title>
+<meta name="description" content="The Solana public RPC limits, the x-ratelimit headers that tell you which limit you hit, why some 429s are a method your plan does not serve, and a retry that knows when to give up.">
+<link rel="canonical" href="https://blixvip.github.io/solana-rpc-bench/solana-rpc-429-too-many-requests.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Why your Solana RPC returns 429 Too Many Requests, and what to do">
+<meta property="og:description" content="The Solana public RPC limits, the x-ratelimit headers that tell you which limit you hit, why some 429s are a method your plan does not serve, and a retry that knows when to give up.">
+<meta property="og:url" content="https://blixvip.github.io/solana-rpc-bench/solana-rpc-429-too-many-requests.html">
+<meta property="og:image" content="https://raw.githubusercontent.com/blixvip/solana-rpc-bench/main/assets/blix-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="https://raw.githubusercontent.com/blixvip/sol-holders/main/assets/blix-icon.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Why your Solana RPC returns 429 Too Many Requests, and what to do","description":"The Solana public RPC limits, the x-ratelimit headers that tell you which limit you hit, why some 429s are a method your plan does not serve, and a retry that knows when to give up.","url":"https://blixvip.github.io/solana-rpc-bench/solana-rpc-429-too-many-requests.html","datePublished":"2026-11-17","dateModified":"2026-11-17","author":{"@type":"Organization","name":"Blix","url":"https://blixvip.com"},"publisher":{"@type":"Organization","name":"Blix","url":"https://blixvip.com"}}</script>
+<style>:root{color-scheme:dark;--bg:#0a0a0b;--panel:#141416;--line:#26262a;--ink:#f3f3f5;--muted:#a0a0a8;--accent:#8fb4ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+main{max-width:780px;margin:0 auto;padding:32px 16px 64px}
+nav{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:14px;margin-bottom:36px}nav .brand{font-weight:700;color:var(--ink);margin-right:auto}
+h1{font-size:clamp(28px,5.5vw,40px);line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}h2{font-size:22px;margin:40px 0 12px}h3{font-size:18px;margin:28px 0 8px}
+.lead{font-size:19px;color:var(--muted);margin:0 0 28px}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:0 0 16px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}p code,li code,td code{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.wrap{overflow-x:auto;margin:0 0 16px}table{border-collapse:collapse;width:100%;font-size:15px}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:var(--panel)}
+ul,ol{padding-left:22px}li{margin:6px 0}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:32px 0}.box h2{margin-top:0}
+.btn{display:inline-block;padding:10px 18px;border-radius:999px;border:1px solid var(--line);color:var(--ink);font-weight:600;margin:4px 8px 4px 0}.btn.main{background:var(--ink);color:#000;border-color:var(--ink)}.btn:hover{text-decoration:none;opacity:.9}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--ink)}.card:hover{text-decoration:none;border-color:#3a3a40}.card b{display:block;margin-bottom:4px}.card span{color:var(--muted);font-size:14px}
+footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}</style>
+</head>
+<body>
+<main>
+<nav><a class="brand" href="https://blixvip.github.io/">BLIX open source</a><a href="https://blixvip.github.io/solana-rpc-bench/">solana-rpc-bench</a><a href="https://github.com/blixvip/solana-rpc-bench">GitHub</a><a href="https://discord.gg/grokbot">Discord</a><a href="https://blixvip.com">blixvip.com</a></nav>
+<article>
+<h1>Why your Solana RPC returns 429 Too Many Requests, and what to do</h1>
+<p class="lead">HTTP 429 means "slow down", but on Solana it covers several different problems: too many requests per IP, too many of one method, too many connections, or a method your endpoint simply does not serve. They need different fixes. Here is how to tell which one you hit.</p>
+
+<h2>The public endpoint's published limits</h2>
+<p>For <code>https://api.mainnet-beta.solana.com</code>, the <a href="https://solana.com/docs/references/clusters">Solana docs</a> list these limits:</p>
+<div class="wrap"><table><tr><th>Limit</th><th>Value</th></tr>
+<tr><td>Requests per 10 seconds per IP</td><td>100</td></tr>
+<tr><td>Requests per 10 seconds per IP for a single RPC method</td><td>40</td></tr>
+<tr><td>Concurrent connections per IP</td><td>40</td></tr>
+<tr><td>Connection rate per 10 seconds per IP</td><td>40</td></tr>
+<tr><td>Data per 30 seconds</td><td>100 MB</td></tr></table></div>
+<p>The docs also say the public endpoints are not meant for production applications. The per-method limit is the one people trip over: 40 <code>getAccountInfo</code> calls in 10 seconds is only 4 a second, so a loop that polls a few accounts hits it long before the overall 100.</p>
+<p>Keyed providers (Helius, QuickNode, Alchemy, Triton and others) have their own limits per plan, often counted in requests per second or in credits, where heavy methods cost more than light ones. Their dashboards show which one you are on.</p>
+
+<h2>Read the response headers</h2>
+<p>The response tells you more than the status code. Asking the public endpoint for a token's largest accounts:</p>
+<pre><code>curl -s -i https://api.mainnet-beta.solana.com -X POST -H "content-type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"getTokenLargestAccounts","params":["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"]}'</code></pre>
+<p>What came back on 2026-11-17 (headers trimmed to the relevant ones):</p>
+<pre><code>HTTP/1.1 429 Too Many Requests
+retry-after: 10
+x-ratelimit-tier: free
+x-ratelimit-method-limit: 0
+x-ratelimit-method-remaining: -1
+x-ratelimit-rps-limit: 250
+x-ratelimit-rps-remaining: 235
+x-ratelimit-conn-limit: 40
+x-ratelimit-conn-remaining: 35
+x-ratelimit-connrate-limit: 40
+x-ratelimit-connrate-remaining: 35
+{"jsonrpc":"2.0","error":{"code":429,"message":"Too many requests for a specific RPC call"},"id":1}</code></pre>
+<p>This was the first request of the minute, and plenty of the general budget was left (<code>rps-remaining: 235</code>). The telling line is <code>x-ratelimit-method-limit: 0</code>: the public endpoint allows zero calls of this method. The <code>retry-after: 10</code> is a trap here, because waiting ten seconds and retrying gets the same answer forever. Header names vary between providers; look at what yours sends with <code>curl -i</code>.</p>
+
+<h2>The five usual causes</h2>
+<ol>
+<li><strong>A method your plan does not serve.</strong> As above. The body usually says "for a specific RPC call". Fix: use an endpoint that serves it (the free plans of the main providers serve <code>getTokenLargestAccounts</code>), not a retry.</li>
+<li><strong>A burst of one method.</strong> Polling or a <code>Promise.all</code> over hundreds of accounts. Fix: batch with <code>getMultipleAccounts</code> (up to 100 accounts per call), or subscribe over WebSocket instead of polling.</li>
+<li><strong>Too many requests per second overall.</strong> Fix: a queue with a steady rate, or spread the calls over more than one endpoint.</li>
+<li><strong>Too many open connections.</strong> Each new HTTP client or WebSocket counts. Fix: reuse one client; do not create a <code>Connection</code> per request.</li>
+<li><strong>Credits used up.</strong> Keyed plans with a monthly budget start refusing when it runs out, often with 429. Fix: check the provider dashboard; heavy methods like <code>getProgramAccounts</code> cost the most.</li>
+</ol>
+
+<h2>A retry that knows when to give up</h2>
+<p>Honour <code>Retry-After</code> when it is there, back off with jitter when it is not, cap the tries, and stop at once when the endpoint says the method is not served. Save as <code>retry.mjs</code>; it runs on Node 18+ with no packages:</p>
+<pre><code>// retry.mjs: a JSON-RPC call that waits and retries on 429, honouring Retry-After.
+const url = process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
+const sleep = (ms) =&gt; new Promise((r) =&gt; setTimeout(r, ms));
+
+export async function rpc(method, params = [], { tries = 4 } = {}) {
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    const body = await res.json().catch(() =&gt; null);
+    const limited = res.status === 429 || body?.error?.code === 429;
+    if (!limited) {
+      if (body?.error) throw new Error(`${method}: RPC error ${body.error.code}: ${body.error.message}`);
+      return body.result;
+    }
+    // A method limit of 0 means this endpoint does not serve the method at all on your plan. Waiting cannot help.
+    if (res.headers.get("x-ratelimit-method-limit") === "0") throw new Error(`${method}: not served by this endpoint (method limit 0)`);
+    if (attempt &gt;= tries) throw new Error(`${method}: still rate limited after ${tries} tries: ${body?.error?.message ?? "HTTP 429"}`);
+    // Retry-After is in seconds when the server sends it; otherwise back off 0.5 s, 1 s, 2 s ... plus jitter.
+    const retryAfter = Number(res.headers.get("retry-after")) * 1000;
+    const wait = retryAfter &gt; 0 ? retryAfter : 500 * 2 ** (attempt - 1) + Math.random() * 250;
+    console.error(`${method}: 429, waiting ${Math.round(wait)} ms (try ${attempt}/${tries})`);
+    await sleep(wait);
+  }
+}
+
+console.log("slot", await rpc("getSlot"));
+try {
+  // The public endpoint refuses this method for everyone: retrying cannot help.
+  await rpc("getTokenLargestAccounts", ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"], { tries: 2 });
+} catch (e) {
+  console.log(e.message);
+}</code></pre>
+<p>Against the public endpoint it returns in about half a second instead of sitting through a pointless ten-second wait:</p>
+<pre><code>slot 470716958
+getTokenLargestAccounts: not served by this endpoint (method limit 0)</code></pre>
+<p>Against a test server that answers 429 twice and then succeeds, the backoff path does its job:</p>
+<pre><code>getSlot: 429, waiting 704 ms (try 1/4)
+getSlot: 429, waiting 1105 ms (try 2/4)
+slot 123</code></pre>
+
+<h2>Find out before production does</h2>
+<p><a href="https://github.com/blixvip/solana-rpc-bench">solana-rpc-bench</a> runs the common methods against each of your endpoints one at a time, counts every 429, and probes whether each endpoint serves the heavier methods (<code>getTokenLargestAccounts</code>, filtered <code>getProgramAccounts</code>, <code>getRecentPrioritizationFees</code>, or your own list). Keys are redacted in the output.</p>
+<pre><code>SOLANA_RPC_URLS="https://api.mainnet-beta.solana.com,https://your-provider-url/..." npx github:blixvip/solana-rpc-bench --rounds 1 --delay 500</code></pre>
+<pre><code>  supports:
+    getTokenLargestAccounts       no: HTTP 429 (code 429): Too many requests for a specific RPC call
+    getProgramAccounts (filters)  yes (297 ms)
+    getRecentPrioritizationFees   yes (96 ms)</code></pre>
+<p>Once you know your endpoints, spread the load across them with failover: <a href="https://blixvip.github.io/solana-rpc-pool/fix-solana-rpc-429-too-many-requests.html">How to stop Solana RPC 429 errors</a> walks through that with <a href="https://github.com/blixvip/solana-rpc-pool">solana-rpc-pool</a>.</p>
+</article>
+<div class="box"><h2>Want it done for you?</h2>
+<p>This tool comes from <a href="https://blixvip.com">Blix</a>, the AI-powered Solana memecoin terminal with 0% fees, which runs on several RPC keys at once: every pump.fun launch live, AI coin ratings, narratives, wallet and X tracking, and one-click trading. There is a <a href="https://blixvip.com/api">public API</a> and an <a href="https://blixvip.com/mcp">MCP server</a> too.</p>
+<p><a class="btn main" href="https://blixvip.com">Start trading at blixvip.com</a><a class="btn" href="https://discord.gg/grokbot">Join the Discord</a></p></div>
+<h2>Help build it</h2>
+<p>solana-rpc-bench is open source and takes pull requests. There are <a href="https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22">good first issues</a> with step-by-step instructions, and setup is <code>git clone</code> and <code>npm test</code>.</p>
+<h2>More guides</h2>
+<div class="grid"><a class="card" href="how-to-test-solana-rpc-latency.html"><b>How to test Solana RPC latency (and compare providers fairly)</b><span>solana-rpc-bench</span></a><a class="card" href="https://blixvip.github.io/solana-rpc-pool/fix-solana-rpc-429-too-many-requests.html"><b>How to stop Solana RPC 429 errors (Too Many Requests)</b><span>solana-rpc-pool</span></a><a class="card" href="https://blixvip.github.io/solana-ws-keepalive/solana-websocket-stops-receiving-messages.html"><b>Why your Solana WebSocket stops receiving messages, and how to keep it alive</b><span>solana-ws-keepalive</span></a><a class="card" href="https://blixvip.github.io/sol-holders/solana-token-top-10-holders-percentage.html"><b>How to calculate a Solana token's top 10 holders percentage</b><span>sol-holders</span></a></div>
+<footer>Written by the <a href="https://blixvip.com">Blix</a> team. Code is MIT licensed. <a href="https://github.com/blixvip">github.com/blixvip</a> · <a href="https://discord.gg/grokbot">discord.gg/grokbot</a> · <a href="https://blixvip.github.io/">All tools and guides</a></footer>
+</main>
+</body>
+</html>

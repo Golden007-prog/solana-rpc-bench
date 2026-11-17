@@ -98,3 +98,30 @@ others 72-103 ms; `fastest clean endpoint this time: https://api.mainnet-beta.so
 ## Known limitations
 
 See README "Limitations" and "Reading the results honestly".
+
+## Ecosystem pieces and project site (2026-11-17, Node v24.15.0)
+
+`npm test`: 17 tests, 16 pass, 1 skipped (LIVE=1 only). New: `examples/html-report.js renders an escaped, key-free page`
+(offline fixtures, a fake Helius key and a `<x>` in a URL: key absent, markup escaped, no `<script>`).
+
+**`examples/github-action/bench.yml`**: parsed with PyYAML 6.0.3 (name, `workflow_dispatch` + `schedule`, 3 steps).
+Not added as an active workflow in this repository. Its run step was executed locally in bash with
+`GITHUB_STEP_SUMMARY` pointed at a temp file, `ROUNDS=1` and `SOLANA_RPC_URLS` empty, using the real
+`npx --yes github:blixvip/solana-rpc-bench` from GitHub: exit 0 in 27 s, the summary file got the full Markdown report
+(summary table, p50 by method, method support, WebSocket line: open 78 ms, subscribed 349 ms, first slot 455 ms). The
+`actions/*` steps themselves were not run (that needs GitHub's runners).
+
+**`examples/html-report.js`**: live, public RPC, one round each, 500-600 ms delay:
+`node bin/cli.js --rounds 1 --delay 500 --json --quiet > report.json && node examples/html-report.js report.json > report.html`
+(2613 bytes, sections Summary / p50 by method / Method support) and the stdin form
+`node bin/cli.js --rounds 1 --delay 600 --no-probes --json --quiet | node examples/html-report.js > report2.html`
+(no Method support section, as expected with `--no-probes`).
+
+**Guide snippets** (docs/*.html), all run on this machine against the public RPC unless noted:
+- curl `-w` timing of `getSlot`: `dns 0.008573s connect 0.075320s tls 0.145765s first byte 0.267736s total 0.267804s`.
+- `latency.mjs` (10 sequential getSlot): p50 68 ms, p90 93 ms, first call 246 ms.
+- `slotlag.mjs` with the public RPC and `https://solana-rpc.publicnode.com`: both lag 0.
+- `curl -i` getTokenLargestAccounts: HTTP 429, `retry-after: 10`, `x-ratelimit-method-limit: 0` (headers quoted in the guide).
+- `retry.mjs`: live, returns "not served by this endpoint (method limit 0)" in 0.5 s; against a local mock server
+  (429, 429, 200, then 429 with Retry-After 1) it waited 704 ms and 1105 ms, returned slot 123, then gave up after 2 tries.
+- The public-RPC limit table is quoted from solana-foundation/solana-com `apps/docs/content/docs/en/references/clusters.mdx`.

@@ -204,6 +204,19 @@ test("formatters render every section", async () => {
   assert.match(m, /Not a ranking of providers/);
 });
 
+test("examples/html-report.js renders an escaped, key-free page", async () => {
+  const { toHtml } = await import("../examples/html-report.js");
+  const net = fakeNet();
+  const r = await bench([HELIUS, "https://b.example/<x>"], { rounds: 1, delayMs: 0, backoffMs: 0, fetch: net.fetch });
+  const html = toHtml(r);
+  assert.match(html, /^<!doctype html>/);
+  assert.match(html, /<h2>Method support<\/h2>/);
+  assert.match(html, /api-key=\*\*\*/);
+  assert.match(html, /b\.example\/%3Cx%3E|&lt;x&gt;/);
+  for (const s of SECRETS) assert.ok(!html.includes(s));
+  assert.ok(!/<script/i.test(html));
+});
+
 test("percentile is nearest-rank", () => {
   assert.equal(percentile([5, 1, 3], 50), 3);
   assert.equal(percentile([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 90), 90);
