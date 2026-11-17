@@ -1,15 +1,20 @@
 # solana-rpc-bench
 
-**Compare Solana RPC endpoints from where you are, right now.** Latency per method, errors and 429s, slot lag against the other endpoints, which heavier methods each one serves, and a WebSocket check. API keys are hidden in every output. Sequential and gentle by default. Zero dependencies.
+**Solana RPC benchmark: compare Helius, QuickNode, Alchemy, Triton or the public endpoint from where you are, right now.** Latency per method, errors and 429s, slot lag against the other endpoints, which heavier methods each one serves, and a WebSocket check. API keys are hidden in every output. Sequential and gentle by default. Zero dependencies.
 
 ![dependencies: 0](https://img.shields.io/badge/dependencies-0-brightgreen)
 ![node: 20+](https://img.shields.io/badge/node-20%2B-blue)
 [![license: MIT](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 [![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/grokbot)
+[![GitHub stars](https://img.shields.io/github/stars/blixvip/solana-rpc-bench?style=social)](https://github.com/blixvip/solana-rpc-bench/stargazers)
 
 <a href="https://blixvip.com"><img src="assets/blix-hero.jpg" width="100%" alt="BLIX: AI-powered Solana memecoin terminal. Trade memes first."></a>
 
+**[Start trading at blixvip.com →](https://blixvip.com)** &nbsp;·&nbsp; [Public API](https://blixvip.com/api) &nbsp;·&nbsp; [MCP server](https://blixvip.com/mcp) &nbsp;·&nbsp; [Discord](https://discord.gg/grokbot)
+
 Built by the team behind **[Blix](https://blixvip.com)**, a Solana memecoin terminal that runs on several RPC keys at once.
+
+If solana-rpc-bench saves you time, **[give it a ⭐](https://github.com/blixvip/solana-rpc-bench)**. It helps other Solana developers find it.
 
 ## The problem
 
@@ -148,6 +153,12 @@ Issues and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Qu
 |---|---|
 | [solana-rpc-pool](https://github.com/blixvip/solana-rpc-pool) | A Solana RPC load balancer: once you know your endpoints, spread calls across them with failover |
 | [solana-ws-keepalive](https://github.com/blixvip/solana-ws-keepalive) | Solana WebSocket subscriptions that reconnect on their own |
+
+## Contributors
+
+Every merged pull request is credited in the release notes. Pick a [good first issue](https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) or say hi in the [Discord](https://discord.gg/grokbot).
+
+<a href="https://github.com/blixvip/solana-rpc-bench/graphs/contributors"><img src="https://contrib.rocks/image?repo=blixvip/solana-rpc-bench" alt="Contributors to solana-rpc-bench"></a>
 
 ## License
 
