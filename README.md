@@ -23,7 +23,7 @@ Choosing an RPC provider, or choosing between the keys you already have, usually
 ## Features
 
 - Times `getSlot`, `getLatestBlockhash`, `getBalance`, `getAccountInfo`, `getSignaturesForAddress` and `getTransaction` over N rounds: p50 / p90 / max, errors, HTTP status counts, 429 count, timeouts.
-- Slot lag: each round reads every endpoint's slot back to back and compares it with the highest seen.
+- Slot lag: each round compares the slot readings after adjusting for time between requests.
 - Support probes: `getTokenLargestAccounts`, `getProgramAccounts` with filters (a tiny query), `getRecentPrioritizationFees`, or your own list.
 - Optional WebSocket check: time to open, to `slotSubscribe` confirmation and to the first slot notification (Node 22+; skipped with a note on Node 20).
 - Text table, `--json` or `--markdown`.
@@ -55,7 +55,7 @@ solana-rpc-bench  2026-11-17T21:23:38.431Z  1 round, 500 ms between requests, co
 
 #1 https://api.mainnet-beta.solana.com
   requests 9, errors 0, 429s 1, timeouts 0; HTTP 200 x8, 429 x1
-  slot lag vs highest seen: median 0, max 0 (1 samples, last slot 470682967)
+  slot lag (adjusted): median 0, max 0 (1 samples, last slot 470682967)
   method                         ok   p50 ms   p90 ms   max ms  last error
   getSlot                       1/1      290      290      290
   getLatestBlockhash            1/1       89       89       89
@@ -85,7 +85,7 @@ const report = await bench(
 );
 console.log(formatTable(report));
 report.endpoints[0].methods.getAccountInfo.p50;   // ms
-report.endpoints[0].slotLag.max;                  // slots behind the highest seen
+report.endpoints[0].slotLag.max;                  // estimated slots behind the best reading
 report.endpoints[0].probes;                       // [{ name, supported, kind, status, code, message, ms }]
 ```
 
@@ -121,7 +121,7 @@ With three rounds and the default probes, each endpoint gets 21 requests (22 wit
 
 Every request is a plain JSON-RPC POST with `AbortSignal.timeout`, timed from send to the full body. Requests go out one at a time through a single queue, so endpoints never compete with each other for your bandwidth, and a 429 pauses that endpoint for `backoffMs` (or Retry-After, up to 10 s).
 
-Each round starts with a **slot sweep**: `getSlot` on every endpoint back to back, at the same commitment. Lag is the highest slot in that sweep minus each endpoint's slot. Then each endpoint runs the other five methods; `getTransaction` looks up the signature `getSignaturesForAddress` just returned, so it tests a recent transaction the endpoint itself listed. If that transaction is newer than the version requested (`-32015`), it is asked once more with the version the node names.
+Each round starts with a **slot sweep**: `getSlot` on every endpoint back to back, at the same commitment. The benchmark estimates each reading's slot at the start of the sweep using its request midpoint and 400 ms per slot. It rounds the gap from the highest adjusted reading to a whole slot. Then each endpoint runs the other five methods; `getTransaction` looks up the signature `getSignaturesForAddress` just returned, so it tests a recent transaction the endpoint itself listed. If that transaction is newer than the version requested (`-32015`), it is asked once more with the version the node names.
 
 Probes run once per endpoint after the rounds. The `getProgramAccounts` probe asks the Config program for accounts of data size 1 with a zero-length slice: it uses filters, matches nothing, and returns almost no data. The WebSocket check opens the socket, subscribes to slots, waits for one notification, unsubscribes and closes.
 
@@ -131,7 +131,7 @@ Probes run once per endpoint after the rounds. The `getProgramAccounts` probe as
 - **Not a ranking of providers.** Free tiers, paid tiers, shared and dedicated nodes behave differently; one run on one plan says nothing about another.
 - **Few samples, wide error bars.** With 3 rounds, p90 is close to max. Use more rounds (and a longer delay) before drawing conclusions, and run at different times of day.
 - **The first request pays for the connection.** DNS, TCP and TLS setup land on the first `getSlot` of each endpoint; that is why it is often the slowest line. Later requests reuse the connection.
-- **Slot lag has noise.** The sweep is sequential, so endpoints are read tens to hundreds of milliseconds apart; a slot is about 400 ms. A lag of 1 can be timing. A lag that stays above 2-3 across rounds is real.
+- **Slot lag is an estimate.** The adjustment assumes 400 ms per slot and approximates when the endpoint read its slot. Look for gaps that persist across rounds.
 - **A refusal is a fact about that endpoint and plan, today.** Providers change which methods they serve on which tier.
 - **Latency is not throughput.** Sequential calls do not show how an endpoint holds up under your production load or how its rate limit behaves at 50 requests a second. This tool deliberately does not test that.
 

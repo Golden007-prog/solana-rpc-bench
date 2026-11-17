@@ -15,6 +15,7 @@ export const PUBLIC_RPC = "https://api.mainnet-beta.solana.com";
 export const DEFAULT_ADDRESS = "So11111111111111111111111111111111111111112";
 const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const CONFIG_PROGRAM = "Config1111111111111111111111111111111111111";
+const ESTIMATED_SLOT_MS = 400;
 
 /** The methods timed every round, in order. getTransaction uses a signature from getSignaturesForAddress. */
 export const TIMED_METHODS = ["getSlot", "getLatestBlockhash", "getBalance", "getAccountInfo", "getSignaturesForAddress", "getTransaction"];
@@ -94,25 +95,28 @@ export async function bench(endpoints, {
     const wait = Math.max(first ? 0 : delayMs, ep.pauseUntil - Date.now());
     first = false;
     if (wait > 0) await sleep(wait);
+    const requestedAt = performance.now();
     const rec = await timedCall(ep.raw.url, method, params, { fetch: fetchFn, timeoutMs });
     if (rec.status === 429) ep.pauseUntil = Date.now() + Math.min(10_000, Math.max(backoffMs, rec.retryAfterMs || 0));
     const { result, ...kept } = rec;
     const out = { ...kept, message: clean(kept.message) };
     onProgress?.({ endpoint: ep.name, method, ok: out.ok, ms: out.ms, kind: out.kind });
-    return { rec: out, result };
+    return { rec: out, result, sampledAt: requestedAt + rec.ms / 2 };
   }
 
   for (let round = 1; round <= rounds; round++) {
-    // Slot sweep: every endpoint's getSlot back to back, so the slots compare across endpoints.
+    // Compare each valid reading at the start of the sweep, allowing for chain progress between calls.
+    const sweepStartedAt = performance.now();
     const sweep = [];
     for (const ep of eps) {
-      const { rec, result } = await call(ep, "getSlot", paramsFor("getSlot", { commitment }));
+      const { rec, result, sampledAt } = await call(ep, "getSlot", paramsFor("getSlot", { commitment }));
       ep.calls.push({ round, ...rec });
-      sweep.push(rec.ok && Number.isFinite(result) ? result : null);
-      if (rec.ok) ep.slots.push(result);
+      const valid = rec.ok && Number.isFinite(result);
+      sweep.push(valid ? result - (sampledAt - sweepStartedAt) / ESTIMATED_SLOT_MS : null);
+      if (valid) ep.slots.push(result);
     }
     const top = Math.max(...sweep.filter((s) => s != null));
-    sweep.forEach((s, i) => { if (s != null) eps[i].lags.push(top - s); });
+    sweep.forEach((s, i) => { if (s != null) eps[i].lags.push(Math.round(top - s)); });
 
     for (const ep of eps) {
       for (const method of TIMED_METHODS.slice(1)) {

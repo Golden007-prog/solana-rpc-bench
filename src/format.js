@@ -30,7 +30,7 @@ export function formatTable(report) {
   for (const e of report.endpoints) {
     out.push("", `#${e.index} ${e.name}`);
     out.push(`  requests ${e.requests}, errors ${e.errors}, 429s ${e.rateLimited}, timeouts ${e.timeouts}; HTTP ${httpLine(e.http)}`);
-    out.push(`  slot lag vs highest seen: median ${ms(e.slotLag.median)}, max ${ms(e.slotLag.max)} (${e.slotLag.samples} samples, last slot ${ms(e.slotLag.lastSlot)})`);
+    out.push(`  slot lag (adjusted): median ${ms(e.slotLag.median)}, max ${ms(e.slotLag.max)} (${e.slotLag.samples} samples, last slot ${ms(e.slotLag.lastSlot)})`);
     out.push(`  ${pad("method", 26)}${lpad("ok", 7)}${lpad("p50 ms", 9)}${lpad("p90 ms", 9)}${lpad("max ms", 9)}  last error`);
     for (const [m, r] of Object.entries(e.methods)) {
       out.push(`  ${pad(m, 26)}${lpad(`${r.ok}/${r.calls}`, 7)}${lpad(ms(r.p50), 9)}${lpad(ms(r.p90), 9)}${lpad(ms(r.max), 9)}  ${r.lastError ? r.lastError.slice(0, 80) : r.skipped ? `skipped x${r.skipped}` : ""}`.trimEnd());

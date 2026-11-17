@@ -62,7 +62,7 @@ second timing is kept, the call carries a `note`, and the refused first attempt 
 - `errors` counts failed timed calls; refused probes are reported in `probes`, not here. `rateLimited` counts every
   429, probes included.
 - Latency is milliseconds from sending the request to having the full body. Percentiles are nearest-rank.
-- `slotLag`: per round, the highest slot any endpoint returned in the sweep minus this endpoint's slot.
+- `slotLag`: per round, compare valid slot readings at the start of the sweep using each request's midpoint and 400 ms per slot. Round the gap from the highest adjusted reading to a whole slot. `lastSlot` is the last raw numeric slot returned by the endpoint.
 - `kind`: `ok`, `rpc-error` (JSON-RPC error), `http-error`, `timeout`, `network`, `bad-json`, `empty`
   (getTransaction returned null), `skipped` (no signature to look up).
 
