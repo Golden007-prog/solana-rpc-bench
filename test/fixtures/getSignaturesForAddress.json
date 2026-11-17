@@ -1,0 +1,25 @@
+{
+ "status": 200,
+ "body": {
+  "jsonrpc": "2.0",
+  "result": [
+   {
+    "blockTime": 1794950324,
+    "confirmationStatus": "finalized",
+    "err": {
+     "InstructionError": [
+      3,
+      {
+       "Custom": 6040
+      }
+     ]
+    },
+    "memo": null,
+    "signature": "2gosDBzMrNUPfnVAbREtu85s3iPgNjVbZeptDQcPNqh9GR2dJCZuwtztrMeZZmWcJieS8bLm6CL2vE5tootktnCn",
+    "slot": 470681608,
+    "transactionIndex": 711
+   }
+  ],
+  "id": 1
+ }
+}

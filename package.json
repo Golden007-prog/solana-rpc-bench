@@ -1,0 +1,19 @@
+{
+  "name": "solana-rpc-bench",
+  "version": "1.0.0",
+  "description": "Compare Solana RPC endpoints from where you are: latency per method, errors and 429s, slot lag, which methods each serves, WebSocket check. API keys redacted. Zero dependencies. By Blix.",
+  "type": "module",
+  "main": "src/index.js",
+  "types": "index.d.ts",
+  "exports": { ".": { "types": "./index.d.ts", "default": "./src/index.js" } },
+  "bin": { "solana-rpc-bench": "bin/cli.js" },
+  "files": ["src", "bin", "index.d.ts", "README.md", "LICENSE"],
+  "scripts": { "test": "node --test" },
+  "engines": { "node": ">=20" },
+  "keywords": ["solana", "rpc", "benchmark", "latency", "rpc-provider", "slot-lag", "websocket", "helius", "quicknode", "crypto", "blix"],
+  "author": "Blix (https://blixvip.com)",
+  "license": "MIT",
+  "homepage": "https://blixvip.com",
+  "repository": { "type": "git", "url": "git+https://github.com/blixvip/solana-rpc-bench.git" },
+  "bugs": { "url": "https://github.com/blixvip/solana-rpc-bench/issues" }
+}

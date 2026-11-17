@@ -1,0 +1,14 @@
+{
+ "status": 200,
+ "body": {
+  "jsonrpc": "2.0",
+  "result": {
+   "context": {
+    "apiVersion": "4.4.0",
+    "slot": 470681600
+   },
+   "value": 1926433017312
+  },
+  "id": 1
+ }
+}
