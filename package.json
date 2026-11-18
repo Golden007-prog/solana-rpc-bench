@@ -1,6 +1,6 @@
 {
   "name": "solana-rpc-bench",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Compare Solana RPC endpoints from where you are: latency per method, errors and 429s, slot lag, which methods each serves, WebSocket check. API keys redacted. Zero dependencies. By Blix.",
   "type": "module",
   "main": "src/index.js",

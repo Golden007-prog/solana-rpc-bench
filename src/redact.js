@@ -6,7 +6,7 @@ const SECRET_PARAM = /key|token|secret|auth|pass|sig|credential/i;
 // A path segment that looks like a token: long, URL-safe characters only, and with a digit in it or long enough
 // that no ordinary path word would be. "v2", "solana", "mainnet" survive; "a1b2c3...32 chars" does not.
 function looksLikeToken(segment) {
-  if (!/^[A-Za-z0-9_\-.~]+$/.test(segment)) return false;
+  if (!/^[A-Za-z0-9_\-.~%+=]+$/.test(segment)) return false;   // % + = too: keys can arrive percent-encoded
   return (segment.length >= 16 && /\d/.test(segment)) || segment.length >= 24;
 }
 
@@ -18,7 +18,14 @@ export function secretsOf(url) {
   if (u.username) out.push(u.username);
   if (u.password) out.push(u.password);
   for (const [k, v] of u.searchParams) if (v && (SECRET_PARAM.test(k) || v.length >= 20)) out.push(v);
-  for (const seg of u.pathname.split("/")) if (seg && looksLikeToken(seg)) out.push(seg);
+  // The raw query too: searchParams decodes ("+" becomes a space), but text that quotes the URL holds the raw form.
+  for (const pair of u.search.slice(1).split("&")) {
+    const i = pair.indexOf("="); if (i < 0) continue;
+    const k = pair.slice(0, i), v = pair.slice(i + 1);
+    let dk = k; try { dk = decodeURIComponent(k.replace(/\+/g, " ")); } catch {}
+    if (v && (SECRET_PARAM.test(dk) || v.length >= 20)) out.push(v);
+  }
+  for (const seg of u.pathname.split("/")) if (seg && looksLikeToken(seg)) { out.push(seg); try { out.push(decodeURIComponent(seg)); } catch {} }
   return out.filter((s) => s.length >= 4);
 }
 

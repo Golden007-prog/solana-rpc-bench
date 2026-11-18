@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-11-17
+
+### Fixed
+
+- Key redaction also covers percent-encoded path tokens and query keys written with `+`.
+
 ## [1.0.2] - 2026-11-17
 
 ### Added
