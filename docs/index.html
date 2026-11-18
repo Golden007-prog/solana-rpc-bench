@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>solana-rpc-bench: Solana RPC benchmark for Helius, QuickNode, Alchemy and more | Blix open source</title>
+<meta name="description" content="Compare Solana RPC endpoints from where you run: latency per method, 429s, slot lag, which heavy methods each one serves, and a WebSocket check. API keys redacted. Zero dependencies.">
+<meta name="keywords" content="Solana RPC benchmark, Solana RPC latency, compare Solana RPC providers, Helius vs QuickNode, Solana slot lag, Solana RPC 429">
+<link rel="canonical" href="https://blixvip.github.io/solana-rpc-bench/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="solana-rpc-bench: Solana RPC benchmark">
+<meta property="og:description" content="Compare Solana RPC endpoints from where you run: latency per method, 429s, slot lag, which heavy methods each one serves, and a WebSocket check. API keys redacted. Zero dependencies.">
+<meta property="og:url" content="https://blixvip.github.io/solana-rpc-bench/">
+<meta property="og:image" content="https://raw.githubusercontent.com/blixvip/solana-rpc-bench/main/assets/blix-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="https://raw.githubusercontent.com/blixvip/sol-holders/main/assets/blix-icon.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareSourceCode","name":"solana-rpc-bench","description":"Compare Solana RPC endpoints from where you run: latency per method, 429s, slot lag, which heavy methods each one serves, and a WebSocket check. API keys redacted. Zero dependencies.","codeRepository":"https://github.com/blixvip/solana-rpc-bench","programmingLanguage":"JavaScript","runtimePlatform":"Node.js 20+","license":"https://opensource.org/licenses/MIT","url":"https://blixvip.github.io/solana-rpc-bench/","author":{"@type":"Organization","name":"Blix","url":"https://blixvip.com"}}</script>
+<style>
+:root{color-scheme:dark;--bg:#0a0a0b;--panel:#141416;--line:#26262a;--ink:#f3f3f5;--muted:#a0a0a8;--accent:#8fb4ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+main{max-width:860px;margin:0 auto;padding:32px 16px 64px}
+nav{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:14px;margin-bottom:36px}nav .brand{font-weight:700;color:var(--ink);margin-right:auto}
+h1{font-size:clamp(30px,6vw,46px);line-height:1.1;margin:0 0 6px;letter-spacing:-.02em}h2{font-size:20px;margin:40px 0 12px}
+.tag{color:var(--muted);font-size:clamp(17px,3vw,21px);margin:0 0 20px}.lead{font-size:18px;margin:0 0 24px}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 28px}.btn{display:inline-block;padding:10px 18px;border-radius:999px;border:1px solid var(--line);color:var(--ink);font-weight:600}.btn.main{background:var(--ink);color:#000;border-color:var(--ink)}.btn:hover{text-decoration:none;opacity:.9}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:0 0 14px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+ul{padding-left:20px;margin:0}li{margin:6px 0}
+.hero{display:block;margin:28px 0 8px}.hero img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--ink)}.card:hover{text-decoration:none;border-color:#3a3a40}.card b{display:block;margin-bottom:4px}.card span{color:var(--muted);font-size:14px}
+footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<nav><a class="brand" href="https://blixvip.github.io/">BLIX open source</a><a href="https://github.com/blixvip/solana-rpc-bench">GitHub</a><a href="https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22">Good first issues</a><a href="https://github.com/blixvip/solana-rpc-bench/discussions">Discussions</a><a href="https://discord.gg/grokbot">Discord</a><a href="https://blixvip.com">blixvip.com</a></nav>
+<h1>solana-rpc-bench</h1>
+<p class="tag">A Solana RPC benchmark you run from your own server</p>
+<p class="lead">Compare Helius, QuickNode, Alchemy, Triton or the public endpoint from where your app runs: latency per method, errors and 429s, slot lag against the other endpoints, which heavier methods each one serves, and a WebSocket check. API keys are hidden in every output. Sequential and gentle. Zero dependencies.</p>
+<div class="cta"><a class="btn main" href="https://github.com/blixvip/solana-rpc-bench">View on GitHub</a><a class="btn" href="https://blixvip.com">Start trading at blixvip.com</a><a class="btn" href="https://discord.gg/grokbot">Join the Discord</a></div>
+<h2>Try it</h2>
+<pre><code>npx github:blixvip/solana-rpc-bench https://api.mainnet-beta.solana.com --rounds 1 --delay 500 --ws
+# several endpoints, keys included (they are redacted in the output):
+SOLANA_RPC_URLS="https://a...,https://b..." npx github:blixvip/solana-rpc-bench</code></pre>
+<h2>Example output</h2>
+<p>A real run against the public endpoint on 2026-11-17 (<code>--quiet</code> hides the per-request progress):</p>
+<pre><code>solana-rpc-bench  2026-11-17T21:23:38.431Z  1 round, 500 ms between requests, commitment confirmed
+
+#1 https://api.mainnet-beta.solana.com
+  requests 9, errors 0, 429s 1, timeouts 0; HTTP 200 x8, 429 x1
+  slot lag vs highest seen: median 0, max 0 (1 samples, last slot 470682967)
+  method                         ok   p50 ms   p90 ms   max ms  last error
+  getSlot                       1/1      290      290      290
+  getLatestBlockhash            1/1       89       89       89
+  getBalance                    1/1      118      118      118
+  getAccountInfo                1/1      116      116      116
+  getSignaturesForAddress       1/1       95       95       95
+  getTransaction                1/1      101      101      101
+  supports:
+    getTokenLargestAccounts       no: HTTP 429 (code 429): Too many requests for a specific RPC call
+    getProgramAccounts (filters)  yes (297 ms)
+    getRecentPrioritizationFees   yes (96 ms)
+  websocket wss://api.mainnet-beta.solana.com: open 288 ms, subscribed 379 ms, first slot 595 ms
+
+One location, one time window. Latency includes your own network path to each provider. Not a ranking of providers.</code></pre>
+<h2>What it measures</h2>
+<ul><li>p50, p90 and max for <code>getSlot</code>, <code>getLatestBlockhash</code>, <code>getBalance</code>, <code>getAccountInfo</code>, <code>getSignaturesForAddress</code> and <code>getTransaction</code></li><li>Errors, HTTP status counts, 429s and timeouts</li><li>Slot lag: every endpoint's slot read back to back, each round</li><li>Whether it serves <code>getTokenLargestAccounts</code>, filtered <code>getProgramAccounts</code> and <code>getRecentPrioritizationFees</code> (or your own list)</li><li>WebSocket open, <code>slotSubscribe</code> and first notification (Node 22+)</li><li>Text, <code>--json</code> or <code>--markdown</code> output</li></ul>
+<h2>Use it in your code</h2>
+<pre><code>npm install github:blixvip/solana-rpc-bench</code></pre>
+<pre><code>import { bench, formatTable } from "solana-rpc-bench";
+
+const report = await bench(
+  ["https://api.mainnet-beta.solana.com", process.env.MY_RPC_URL].filter(Boolean),
+  { rounds: 3, delayMs: 300, ws: false },
+);
+console.log(formatTable(report));
+report.endpoints[0].methods.getAccountInfo.p50;   // ms
+report.endpoints[0].slotLag.max;                  // slots behind the highest seen</code></pre>
+<h2>Run it on a schedule or share a report</h2>
+<ul><li><a href="https://github.com/blixvip/solana-rpc-bench/blob/main/examples/github-action/bench.yml">examples/github-action/bench.yml</a>: copy into your repository's workflows to bench your endpoints daily from GitHub's runners, with the Markdown report in the job summary.</li><li><a href="https://github.com/blixvip/solana-rpc-bench/blob/main/examples/html-report.js">examples/html-report.js</a>: turn <code>--json</code> output into one self-contained HTML page.</li></ul>
+<p>Full documentation, the API and the caveats are in the <a href="https://github.com/blixvip/solana-rpc-bench#readme">README</a>. MIT licensed, no dependencies.</p>
+<a class="hero" href="https://blixvip.com"><img src="https://raw.githubusercontent.com/blixvip/solana-rpc-bench/main/assets/blix-hero.jpg" alt="BLIX: AI-powered Solana memecoin terminal. Trade memes first." width="1600" height="900" loading="lazy"></a>
+<h2>Guides</h2>
+<div class="grid"><a class="card" href="how-to-test-solana-rpc-latency.html"><b>How to test Solana RPC latency</b><span>curl timings, a 20-line Node script, slot lag, and the mistakes that make numbers lie</span></a><a class="card" href="solana-rpc-429-too-many-requests.html"><b>Why your Solana RPC returns 429, and what to do</b><span>The public limits, the headers that tell you which one you hit, and a retry that knows when to give up</span></a></div>
+<h2>From the team behind Blix</h2>
+<p>solana-rpc-bench is a small, open piece of the tooling behind <a href="https://blixvip.com">Blix</a>, the AI-powered Solana memecoin terminal with 0% fees, which runs on several RPC keys at once: every pump.fun launch live, AI coin ratings, narratives, wallet and X tracking, and one-click trading. There is also a <a href="https://blixvip.com/api">public API</a> and an <a href="https://blixvip.com/mcp">MCP server</a> for AI agents. This tool never calls a Blix service.</p>
+<h2>Contribute</h2>
+<p>Pull requests are welcome and there are <a href="https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22">good first issues</a> with step-by-step instructions. Setup is <code>git clone</code> and <code>npm test</code>, fully offline. Ask anything in <a href="https://github.com/blixvip/solana-rpc-bench/discussions">Discussions</a> or the <a href="https://discord.gg/grokbot">Discord</a>.</p>
+<h2>More Solana tools from Blix</h2>
+<div class="grid"><a class="card" href="https://blixvip.github.io/solana-rpc-pool/"><b>solana-rpc-pool</b><span>A Solana RPC load balancer: several endpoints, rate limits, failover</span></a><a class="card" href="https://blixvip.github.io/solana-ws-keepalive/"><b>solana-ws-keepalive</b><span>Solana WebSocket subscriptions that reconnect on their own</span></a><a class="card" href="https://blixvip.github.io/sol-holders/"><b>sol-holders</b><span>Top holders of any Solana token, with pools and curves left out</span></a><a class="card" href="https://blixvip.github.io/pump-curve/"><b>pump-curve</b><span>Read a pump.fun bonding curve: price, market cap, progress, migration</span></a><a class="card" href="https://blixvip.github.io/pump-curve-rs/"><b>pump-curve-rs</b><span>pump.fun bonding curve math in Rust, exact to the lamport</span></a></div>
+<footer>MIT licensed. Made by <a href="https://blixvip.com">Blix</a>. <a href="https://github.com/blixvip">github.com/blixvip</a> · <a href="https://discord.gg/grokbot">discord.gg/grokbot</a></footer>
+</main>
+</body>
+</html>

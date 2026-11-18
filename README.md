@@ -10,7 +10,7 @@
 
 <a href="https://blixvip.com"><img src="assets/blix-hero.jpg" width="100%" alt="BLIX: AI-powered Solana memecoin terminal. Trade memes first."></a>
 
-**[Start trading at blixvip.com →](https://blixvip.com)** &nbsp;·&nbsp; [Public API](https://blixvip.com/api) &nbsp;·&nbsp; [MCP server](https://blixvip.com/mcp) &nbsp;·&nbsp; [Discord](https://discord.gg/grokbot)
+**[Start trading at blixvip.com →](https://blixvip.com)** &nbsp;·&nbsp; [Website and guides](https://blixvip.github.io/solana-rpc-bench/) &nbsp;·&nbsp; [Public API](https://blixvip.com/api) &nbsp;·&nbsp; [MCP server](https://blixvip.com/mcp) &nbsp;·&nbsp; [Discord](https://discord.gg/grokbot)
 
 Built by the team behind **[Blix](https://blixvip.com)**, a Solana memecoin terminal that runs on several RPC keys at once.
 
@@ -96,6 +96,10 @@ report.endpoints[0].probes;                       // [{ name, supported, kind, s
 | [`examples/compare.js`](examples/compare.js) | bench `SOLANA_RPC_URLS` (or the public RPC) for one round and pick by your own rule |
 | [`examples/custom-probes.js`](examples/custom-probes.js) | check an endpoint for the methods your app needs |
 | [`examples/redact.js`](examples/redact.js) | how keyed URLs appear in output (offline) |
+| [`examples/html-report.js`](examples/html-report.js) | turn `--json` output into one self-contained HTML page: `node bin/cli.js --json --quiet \| node examples/html-report.js > report.html` |
+| [`examples/github-action/bench.yml`](examples/github-action/bench.yml) | copy to `.github/workflows/` in your repository: benches `SOLANA_RPC_URLS` (a repository secret) daily and puts the Markdown report in the job summary |
+
+Guides on the project site: [How to test Solana RPC latency](https://blixvip.github.io/solana-rpc-bench/how-to-test-solana-rpc-latency.html) · [Why your Solana RPC returns 429, and what to do](https://blixvip.github.io/solana-rpc-bench/solana-rpc-429-too-many-requests.html)
 
 ## API
 
@@ -146,6 +150,10 @@ Probes run once per endpoint after the rounds. The `getProgramAccounts` probe as
 ## Contributing
 
 Issues and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Questions, ideas or claiming an issue: **[discord.gg/grokbot](https://discord.gg/grokbot)**. Tests run offline: `npm test`.
+
+## Good first issues
+
+New to the project? These are small, scoped and come with step-by-step instructions: **[good first issues](https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)**. Bigger pieces (a Docker image, a scheduled report, an HTML report flag) are under **[help wanted](https://github.com/blixvip/solana-rpc-bench/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)**, and the [roadmap issue](https://github.com/blixvip/solana-rpc-bench/issues/15) groups everything open. Questions go in [Discussions](https://github.com/blixvip/solana-rpc-bench/discussions) or the [Discord](https://discord.gg/grokbot).
 
 ## Related projects
 
