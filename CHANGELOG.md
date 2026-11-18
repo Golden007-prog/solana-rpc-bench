@@ -12,7 +12,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
-- Adjust slot lag for elapsed sampling time within each sequential sweep.
+- Adjust slot lag for elapsed sampling time within each sequential sweep. Thanks [@Golden007-prog](https://github.com/Golden007-prog) (#6).
 
 ## [1.0.1] - 2026-11-17
 
