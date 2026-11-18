@@ -2,7 +2,7 @@
 
 ```js
 import {
-  bench, formatTable, formatMarkdown,
+  bench, formatTable, formatMarkdown, formatCsv,
   timedCall, describeFailure, wsCheck, toWsUrl,
   redactUrl, secretsOf, scrub, percentile,
   PUBLIC_RPC, DEFAULT_ADDRESS, TIMED_METHODS, DEFAULT_PROBES, BenchInputError,
@@ -69,6 +69,12 @@ second timing is kept, the call carries a `note`, and the refused first attempt 
 ## `formatTable(report)` / `formatMarkdown(report)`
 
 Text for a terminal; Markdown with a summary table, a per-method table and a support table.
+
+## `formatCsv(report)`
+
+Returns a CSV header followed by one row for each endpoint and timed method.
+Missing timing and lag measurements are empty cells. Fields are escaped for CSV
+and use the redacted endpoint label from the report.
 
 ## `timedCall(url, method, params, { fetch?, timeoutMs? }) → Promise<CallRecord>`
 

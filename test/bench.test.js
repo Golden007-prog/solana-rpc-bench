@@ -227,6 +227,22 @@ test("formatters render every section", async () => {
   assert.match(m, /Not a ranking of providers/);
 });
 
+test("CSV renders every timed method with quoted fields and empty metrics", async () => {
+  const { formatCsv } = await import("../src/index.js");
+  const other = "https://b.example/";
+  const net = fakeNet({ overrides: { [other]: { getSlot: response(503, {}) } } });
+  const report = await bench([HELIUS, other], { rounds: 1, delayMs: 0, backoffMs: 0, probes: false, fetch: net.fetch });
+  report.endpoints[1].name = 'west, "secondary"\nbackup';
+
+  const csv = formatCsv(report);
+  const lines = csv.split("\r\n");
+  assert.equal(lines[0], "startedAt,endpoint,method,calls,ok,errors,p50_ms,p90_ms,max_ms,slot_lag_median,slot_lag_max");
+  assert.equal(lines.length, 1 + 2 * TIMED_METHODS.length);
+  assert.ok(lines.includes(`${report.startedAt},"west, ""secondary""\nbackup",getSlot,1,0,1,,,,,`));
+  assert.ok(lines.some((line) => line.includes(",https://mainnet.helius-rpc.com/?api-key=***,getSlot,1,1,0,")));
+  for (const secret of SECRETS) assert.ok(!csv.includes(secret));
+});
+
 test("examples/html-report.js renders an escaped, key-free page", async () => {
   const { toHtml } = await import("../examples/html-report.js");
   const net = fakeNet();
@@ -250,6 +266,7 @@ test("CLI --help runs offline", () => {
   const r = spawnSync(process.execPath, [fileURLToPath(new URL("../bin/cli.js", import.meta.url)), "--help"], { encoding: "utf8" });
   assert.equal(r.status, 0);
   assert.match(r.stdout, /replaced with \*\*\*/);
+  assert.match(r.stdout, /--csv/);
 });
 
 test("live public RPC (LIVE=1 only)", { skip: !process.env.LIVE }, async () => {

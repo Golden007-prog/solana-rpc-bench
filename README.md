@@ -26,7 +26,7 @@ Choosing an RPC provider, or choosing between the keys you already have, usually
 - Slot lag: each round compares the slot readings after adjusting for time between requests.
 - Support probes: `getTokenLargestAccounts`, `getProgramAccounts` with filters (a tiny query), `getRecentPrioritizationFees`, or your own list.
 - Optional WebSocket check: time to open, to `slotSubscribe` confirmation and to the first slot notification (Node 22+; skipped with a note on Node 20).
-- Text table, `--json` or `--markdown`.
+- Text table, `--json`, `--markdown`, or `--csv` for spreadsheets.
 - API keys redacted from URLs and error messages: query-string keys, path tokens, user info.
 - One request at a time with a delay between them (250 ms default), extra back-off after a 429. Never parallel.
 - TypeScript declarations. Works with any Solana RPC; nothing here calls a Blix service.
@@ -103,7 +103,7 @@ Guides on the project site: [How to test Solana RPC latency](https://blixvip.git
 
 ## API
 
-`bench`, `formatTable`, `formatMarkdown`, `timedCall`, `describeFailure`, `wsCheck`, `toWsUrl`, `redactUrl`, `secretsOf`, `scrub`, `percentile`, the constants and `BenchInputError`. Full reference and the report shape in [docs/API.md](docs/API.md); types in [index.d.ts](index.d.ts).
+`bench`, `formatTable`, `formatMarkdown`, `formatCsv`, `timedCall`, `describeFailure`, `wsCheck`, `toWsUrl`, `redactUrl`, `secretsOf`, `scrub`, `percentile`, the constants and `BenchInputError`. Full reference and the report shape in [docs/API.md](docs/API.md); types in [index.d.ts](index.d.ts).
 
 ## Configuration
 
@@ -116,7 +116,7 @@ Guides on the project site: [How to test Solana RPC latency](https://blixvip.git
 | `--address` | `address` | wSOL mint | account used by the account and signature methods |
 | `--ws` | `ws` | off | WebSocket check |
 | `--no-probes` | `probes: false` | probes on | |
-| `--json` / `--markdown` | `formatMarkdown()` | text | |
+| `--json` / `--markdown` / `--csv` | `formatMarkdown()` / `formatCsv()` | text | |
 | `--quiet` | `onProgress` | progress on | |
 
 With three rounds and the default probes, each endpoint gets 21 requests (22 with `--ws`). The public endpoint (`api.mainnet-beta.solana.com`) is free and rate limited; Helius, QuickNode, Alchemy, Triton and others are third-party services with their own free tiers and limits. Benchmarking a provider spends your quota there.

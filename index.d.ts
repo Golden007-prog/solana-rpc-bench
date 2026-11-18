@@ -112,6 +112,7 @@ export interface BenchReport {
 export declare function bench(endpoints: string | (string | EndpointSpec)[], options?: BenchOptions): Promise<BenchReport>;
 export declare function formatTable(report: BenchReport): string;
 export declare function formatMarkdown(report: BenchReport): string;
+export declare function formatCsv(report: BenchReport): string;
 export declare function timedCall(url: string, method: string, params: unknown[], options?: { fetch?: typeof fetch; timeoutMs?: number; now?: () => number }): Promise<CallRecord>;
 export declare function describeFailure(record: Pick<CallRecord, "kind" | "status" | "code" | "message">): string;
 export declare function wsCheck(wsUrl: string, options?: { WebSocket?: typeof WebSocket | null; timeoutMs?: number; now?: () => number }): Promise<WsResult>;

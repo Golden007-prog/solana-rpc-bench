@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- `--csv` and `formatCsv(report)` provide spreadsheet-ready rows for each endpoint and timed method.
+
 ## [1.0.3] - 2026-11-17
 
 ### Fixed

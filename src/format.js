@@ -1,4 +1,4 @@
-// Text and Markdown renderings of a bench() report. Both use only the report, which is already redacted.
+// Text, Markdown and CSV renderings of a bench() report, which is already redacted.
 import { describeFailure } from "./call.js";
 
 const ms = (v) => (v == null ? "-" : `${v}`);
@@ -76,4 +76,23 @@ export function formatMarkdown(report) {
   }
   out.push("", `_${report.note}_`);
   return out.join("\n");
+}
+
+function csvCell(value) {
+  const text = String(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/** CSV for spreadsheets: one row per endpoint and timed method. */
+export function formatCsv(report) {
+  const rows = ["startedAt,endpoint,method,calls,ok,errors,p50_ms,p90_ms,max_ms,slot_lag_median,slot_lag_max"];
+  for (const endpoint of report.endpoints) {
+    for (const [method, stats] of Object.entries(endpoint.methods)) {
+      rows.push([
+        report.startedAt, endpoint.name, method, stats.calls, stats.ok, stats.errors,
+        stats.p50, stats.p90, stats.max, endpoint.slotLag.median, endpoint.slotLag.max,
+      ].map(csvCell).join(","));
+    }
+  }
+  return rows.join("\r\n");
 }

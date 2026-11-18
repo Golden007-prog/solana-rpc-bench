@@ -8,7 +8,7 @@ import { redactUrl, scrub, secretsOf } from "./redact.js";
 import { wsCheck, toWsUrl } from "./ws.js";
 
 export { timedCall, BenchInputError, describeFailure, redactUrl, scrub, secretsOf, wsCheck, toWsUrl };
-export { formatTable, formatMarkdown } from "./format.js";
+export { formatTable, formatMarkdown, formatCsv } from "./format.js";
 
 export const PUBLIC_RPC = "https://api.mainnet-beta.solana.com";
 /** Wrapped SOL mint: exists on every cluster's mainnet RPC and has a steady stream of transactions. */
