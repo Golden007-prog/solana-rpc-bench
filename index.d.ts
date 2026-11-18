@@ -91,6 +91,7 @@ export interface EndpointReport {
   timeouts: number;
   http: Record<string, number>;
   latency: { p50: number | null; p90: number | null; max: number | null };
+  /** Lag uses time-adjusted readings. lastSlot contains the last raw slot. */
   slotLag: { samples: number; median: number | null; max: number | null; lastSlot: number | null };
   methods: Record<TimedMethod, MethodStats>;
   probes: ProbeResult[];

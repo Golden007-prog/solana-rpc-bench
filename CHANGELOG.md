@@ -10,6 +10,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - `examples/github-action/bench.yml`: a workflow to copy into your own repository that benches your endpoints daily and writes the Markdown report to the job summary.
 - Project site with two guides: https://blixvip.github.io/solana-rpc-bench/
 
+### Fixed
+
+- Adjust slot lag for elapsed sampling time within each sequential sweep.
+
 ## [1.0.1] - 2026-11-17
 
 ### Fixed

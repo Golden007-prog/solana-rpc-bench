@@ -72,7 +72,7 @@ test("timedCall turns every outcome into a record", async () => {
   assert.ok(signal instanceof AbortSignal, "every request carries a timeout signal");
 });
 
-test("bench: sequential, slot lag against the highest slot, signature reused, probes classified", async () => {
+test("bench: sequential, slot lag against the highest adjusted slot, signature reused, probes classified", async () => {
   const A = "https://a.example/", B = HELIUS;
   const net = fakeNet({ slotOffset: { [B]: 3 } });
   const r = await bench([A, B], { rounds: 2, delayMs: 0, backoffMs: 0, fetch: net.fetch, ws: false });
@@ -107,6 +107,29 @@ test("bench waits delayMs between requests and backs off after a 429", async () 
   assert.equal(r.endpoints[0].rateLimited, 1);
   assert.equal(r.endpoints[0].methods.getLatestBlockhash.errors, 1);
   assert.match(r.endpoints[0].methods.getLatestBlockhash.lastError, /429/);
+});
+
+test("bench compares successful slots at a common time within the sweep", async (t) => {
+  const endpoints = ["https://a.example/", "https://b.example/", "https://c.example/", "https://d.example/"];
+  const { body } = fx("getSlot");
+  const slots = [body.result, null, body.result + 2, body.result + 1];
+  const responseTimes = [800, 200, 400, 400];
+  const fallback = fakeNet();
+  let elapsed = 0;
+  t.mock.method(performance, "now", () => elapsed);
+  const fetch = async (url, init) => {
+    const { method } = JSON.parse(init.body);
+    if (method !== "getSlot") return fallback.fetch(url, init);
+    const index = endpoints.indexOf(url);
+    elapsed += responseTimes[index];
+    const slot = slots[index];
+    if (slot === null) return response(503, "unavailable");
+    return response(200, { ...body, result: slot });
+  };
+
+  const { endpoints: report } = await bench(endpoints, { rounds: 1, delayMs: 0, probes: false, fetch });
+  assert.deepEqual(report.map(({ slotLag }) => slotLag.median), [0, null, 0, 2]);
+  assert.deepEqual(report.map(({ slotLag }) => slotLag.lastSlot), slots);
 });
 
 test("errors from a keyed endpoint are scrubbed and getTransaction is skipped without a signature", async () => {
@@ -198,7 +221,7 @@ test("formatters render every section", async () => {
   const r = await bench(["https://a.example/", "https://b.example/"], { rounds: 1, delayMs: 0, backoffMs: 0, fetch: net.fetch });
   const t = formatTable(r), m = formatMarkdown(r);
   assert.match(t, /#2 https:\/\/b\.example\/\n/);
-  assert.match(t, /slot lag vs highest seen: median 1, max 1/);
+  assert.match(t, /slot lag \(adjusted\): median 1, max 1/);
   assert.match(t, /getTokenLargestAccounts\s+no: HTTP 429 \(code 429\): Too many requests/);
   assert.match(m, /\| method \| #1 \| #2 \|/);
   assert.match(m, /Not a ranking of providers/);
